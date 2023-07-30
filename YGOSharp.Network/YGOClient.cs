@@ -15,9 +15,9 @@ namespace YGOSharp.Network
         {
         }
 
-        public void Send(BinaryWriter writer)
+        public void Send(BinaryWriter writer,bool synchronize = false)
         {
-            Send(((MemoryStream)writer.BaseStream).ToArray());
+            Send(((MemoryStream)writer.BaseStream).ToArray(), synchronize);
         }
 
         public void Send(CtosMessage message)

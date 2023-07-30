@@ -77,7 +77,7 @@ namespace YGOSharp.Network
             }
         }
 
-        public void Send(byte[] packet)
+        public void Send(byte[] packet, bool synchronize = false)
         {
             if (packet.Length > MaxPacketLength)
             {
@@ -103,7 +103,14 @@ namespace YGOSharp.Network
             byte[] data = new byte[packet.Length + HeaderSize];
             Array.Copy(header, 0, data, 0, header.Length);
             Array.Copy(packet, 0, data, header.Length, packet.Length);
-            _client.BeginSend(data);
+            if (!synchronize)
+            {
+                _client.BeginSend(data);
+            }
+            else
+            {
+                _client.Send(data, PacketReceived);
+            }
         }
 
         public void Close(Exception error = null)
@@ -218,7 +225,15 @@ namespace YGOSharp.Network
 
                 lock (_pendingPackets)
                 {
-                    _pendingPackets.Enqueue(packet);
+                    if (packet[0] == 35)
+                    {
+                        _client.synchronize_data = packet;
+                        _client._event.Set();
+                    }
+                    else
+                    {
+                        _pendingPackets.Enqueue(packet);
+                    }
                 }
 
                 return true;

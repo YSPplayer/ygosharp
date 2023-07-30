@@ -50,7 +50,12 @@
     <Compile Include="Utils\BinaryExtensions.cs" />
     <Compile Include="YGOClient.cs" />
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <ProjectReference Include="..\YGOSharp.OCGWrapper.Enums\YGOSharp.OCGWrapper.Enums.csproj">
+      <Project>{AD18E0AA-1EED-4A2C-A251-B1BF9097892B}</Project>
+      <Name>YGOSharp.OCGWrapper.Enums</Name>
+    </ProjectReference>
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

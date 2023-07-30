@@ -1,6 +1,8 @@
 ﻿using System;
+using System.IO;
 using System.Net;
 using System.Net.Sockets;
+using System.Threading;
 
 namespace YGOSharp.Network
 {
@@ -23,6 +25,9 @@ namespace YGOSharp.Network
         private IPEndPoint _endPoint;
         private bool _isClosed;
         private byte[] _receiveBuffer = new byte[BufferSize];
+        public ManualResetEvent _event = new ManualResetEvent(false);
+        private object synchronize_receive_lock = new object();
+        public byte[] synchronize_data = null;
 
         public NetworkClient()
         {
@@ -58,11 +63,53 @@ namespace YGOSharp.Network
                 }
             }
         }
+        public void Send(byte[] data, Action<BinaryReader> packetReceived)
+        {
+            lock (synchronize_receive_lock)
+            {
+                int bytesSent;
+                try
+                {
+                    bytesSent = _socket.Send(data);
+                }
+                catch (Exception ex)
+                {
+                    Close(ex);
+                    return;
+                }
+                if (bytesSent != data.Length)
+                {
+                    Close();
+                    return;
+                }
+                _event.Reset();
+            }
+            Receive(packetReceived);
+        }
+
+        public void Receive(Action<BinaryReader> packetReceived)
+        {
+            _event.WaitOne(TimeSpan.FromSeconds(5));
+            if (synchronize_data == null)
+            {
+                Close();
+                return;
+            }
+            using (MemoryStream stream = new MemoryStream(synchronize_data, false))
+            {
+                using (BinaryReader reader = new BinaryReader(stream))
+                {
+                    packetReceived?.Invoke(reader);
+                }
+            }
+            synchronize_data = null;
+        }
 
         public void BeginSend(byte[] data)
         {
             try
             {
+                
                 _socket.BeginSend(data, 0, data.Length, SocketFlags.None, SendCallback, data.Length);
             }
             catch (Exception ex)
@@ -137,25 +184,28 @@ namespace YGOSharp.Network
 
         private void ReceiveCallback(IAsyncResult result)
         {
-            int bytesRead;
-            try
+            lock (synchronize_receive_lock)
             {
-                bytesRead = _socket.EndReceive(result);
+                int bytesRead;
+                try
+                {
+                    bytesRead = _socket.EndReceive(result);
+                }
+                catch (Exception ex)
+                {
+                    Close(ex);
+                    return;
+                }
+                if (bytesRead == 0)
+                {
+                    Close();
+                    return;
+                }
+                byte[] data = new byte[bytesRead];
+                Array.Copy(_receiveBuffer, data, bytesRead);
+                DataReceived?.Invoke(data);
+                BeginReceive();
             }
-            catch (Exception ex)
-            {
-                Close(ex);
-                return;
-            }
-            if (bytesRead == 0)
-            {
-                Close();
-                return;
-            }
-            byte[] data = new byte[bytesRead];
-            Array.Copy(_receiveBuffer, data, bytesRead);
-            DataReceived?.Invoke(data);
-            BeginReceive();
         }
     }
 }

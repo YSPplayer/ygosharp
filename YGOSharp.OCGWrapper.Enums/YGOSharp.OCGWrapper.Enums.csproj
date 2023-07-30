@@ -38,12 +38,16 @@
     <Compile Include="CardLocation.cs" />
     <Compile Include="CardPosition.cs" />
     <Compile Include="CardRace.cs" />
+    <Compile Include="CardReason.cs" />
+    <Compile Include="CardStatus.cs" />
     <Compile Include="CardType.cs" />
     <Compile Include="DuelPhase.cs" />
+    <Compile Include="Effect.cs" />
     <Compile Include="GameMessage.cs" />
     <Compile Include="CardLinkMarker.cs" />
     <Compile Include="Query.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="SummonType.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
